@@ -1,0 +1,33 @@
+[
+    {
+      "title": "Red Satin Dress",
+      "image_url": "https://static.zara.net/assets/public/19a7/129a/cb474a6d88eb/8c4315f36d28/03067213632-p/03067213632-p.jpg?ts=1752051790456&w=632",
+      "price": "$129",
+      "link": "https://glami.com/product/1"
+    },
+    {
+      "title": "White Sneakers",
+      "image_url": "https://static.zara.net/assets/public/7a13/e326/591641f4bd03/4c1f6d55b4f9/15415610001-e1/15415610001-e1.jpg?ts=1751368470995&w=632",
+      "price": "$99",
+      "link": "https://glami.com/product/2"
+    },
+    {
+      "title": "Black Leather Jacket",
+      "image_url": "https://static.zara.net/assets/public/01f7/7723/ddb345b7aece/307f0f2510ac/03046064800-p/03046064800-p.jpg?ts=1749112199024&w=632",
+      "price": "$249",
+      "link": "https://glami.com/product/3"
+    },
+    {
+      "title": "Green Maxi Dress",
+      "image_url": "https://static.zara.net/assets/public/55bc/adc0/dbbf46469cbd/6ffee1d7c70f/08073126505-p/08073126505-p.jpg?ts=1751968694166&w=632",
+      "price": "$149",
+      "link": "https://glami.com/product/4"
+    },
+    {
+      "title": "Gray Knit Sweater",
+      "image_url": "https://static.zara.net/assets/public/8f81/6b22/4adc4efd83b9/f1214f7b5e28/05536200809-p/05536200809-p.jpg?ts=1733937398511&w=632",
+      "price": "$89",
+      "link": "https://glami.com/product/5"
+    }
+  ]
+  

@@ -1,0 +1,41 @@
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/*" required />
+    <button type="submit">Search</button>
+  </form>
+  
+  <div id="loading" style="display: none;">🔍 Searching...</div>
+  <div id="results"></div>
+  <div id="error" style="color: red;"></div>
+  
+  <script>
+    const form = document.getElementById("uploadForm");
+    const loading = document.getElementById("loading");
+    const results = document.getElementById("results");
+    const error = document.getElementById("error");
+  
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      results.innerHTML = "";
+      error.textContent = "";
+      loading.style.display = "block";
+  
+      const formData = new FormData(form);
+  
+      try {
+        const res = await fetch("http://localhost:8000/search-html", {
+          method: "POST",
+          body: formData,
+        });
+  
+        if (!res.ok) throw new Error("Search failed");
+  
+        const html = await res.text();
+        results.innerHTML = html;
+      } catch (err) {
+        error.textContent = "❌ Error: " + err.message;
+      } finally {
+        loading.style.display = "none";
+      }
+    });
+  </script>
+  
