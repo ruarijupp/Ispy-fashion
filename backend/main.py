@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.embedder import embed_image_from_file
+from app.embedder import embed_image_from_file, embed_text  # unchanged since app is subfolder
 from qdrant_client import QdrantClient
 
 import tempfile
@@ -13,7 +13,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173"],  # update for your frontend URL in prod
     allow_methods=["*"],
     allow_headers=["*"],
 )
