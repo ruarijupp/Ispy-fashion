@@ -20,6 +20,8 @@ export default function Homepage() {
     { src: "/assets/ispymoodboardimage5.png", user: "olivia.picks", width: 208, height: 244 },
   ];
 
+  const API_URL = process.env.REACT_APP_API || 'http://localhost:8000';
+
   const handleImageSearch = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -32,7 +34,7 @@ export default function Homepage() {
     setResults([]);
 
     try {
-      const res = await fetch('http://localhost:8000/search', {
+      const res = await fetch(`${API_URL}/search`, {
         method: 'POST',
         body: formData,
       });
@@ -40,13 +42,14 @@ export default function Homepage() {
       const data = await res.json();
       console.log("📦 Search result:", data);
 
-      if (data?.results) {
+      if (data?.results && data.results.length > 0) {
         setResults(data.results);
       } else {
         setResults([]);
       }
     } catch (err) {
       console.error('❌ Image search failed:', err);
+      setResults([]);
     } finally {
       setLoading(false);
     }
