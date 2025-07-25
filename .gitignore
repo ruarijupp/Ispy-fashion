@@ -1,12 +1,8 @@
-# Python
-__pycache__/
-*.pyc
-venv/
-
-# Node/React
 node_modules/
 dist/
+venv/
+__pycache__/
 .env
+qdrant_data/
+*.db
 
-# Mac
-.DS_Store
