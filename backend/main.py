@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from backend.embedder import embed_image_from_file, embed_text
+from embedder import embed_image_from_file, embed_text
 from qdrant_client import QdrantClient
 import tempfile
 
