@@ -1,19 +1,19 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.embedder import embed_image_from_file, embed_text  # unchanged since app is subfolder
+from embedder import embed_image_from_file, embed_text
 from qdrant_client import QdrantClient
-
 import tempfile
 
 COLLECTION_NAME = "fashion_items"
-client = QdrantClient("localhost", port=6333)
+client = QdrantClient(url="http://localhost:6333")  # Local Qdrant instance
 
 app = FastAPI()
 
+# CORS for frontend dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # update for your frontend URL in prod
+    allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -35,7 +35,8 @@ async def search(query: str = Form(None), file: UploadFile = File(None)):
     hits = client.search(
         collection_name=COLLECTION_NAME,
         query_vector=vec,
-        limit=12
+        limit=12,
+        with_payload=True
     )
 
     return {
@@ -49,7 +50,6 @@ async def search(query: str = Form(None), file: UploadFile = File(None)):
         ]
     }
 
-
 @app.post("/search-html", response_class=HTMLResponse)
 async def search_html(file: UploadFile = File(...)):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
@@ -62,19 +62,28 @@ async def search_html(file: UploadFile = File(...)):
     hits = client.search(
         collection_name=COLLECTION_NAME,
         query_vector=vec,
-        limit=5
+        limit=12,
+        with_payload=True
     )
 
-    html = "<h2>Top Matches:</h2><div style='display: flex; gap: 20px; flex-wrap: wrap;'>"
+    if not hits:
+        return HTMLResponse("<p>No results found. Try a clearer or different image.</p>")
+
+    html = """
+    <h2>Top Matches:</h2>
+    <div style='display: flex; flex-wrap: wrap; gap: 24px;'>
+    """
+
     for hit in hits:
         p = hit.payload
+        image_url = p.get("image_url", "")
+        url = p.get("url", "#")
+
         html += f"""
-            <div style="text-align: center;">
-                <img src="{p.get('image_url', '')}" alt="{p.get('title', 'No Title')}" width="200"/><br/>
-                <strong>{p.get('title', 'No Title')}</strong><br/>
-                {p.get('price', '')}<br/>
-                <a href="{p.get('url', '#')}" target="_blank">View Product</a>
-            </div>
+            <a href="{url}" target="_blank" style="display: block; width: 200px;">
+                <img src="{image_url}" style="width: 100%; height: auto; object-fit: contain; border-radius: 6px;" />
+            </a>
         """
+
     html += "</div>"
-    return html
+    return HTMLResponse(html)

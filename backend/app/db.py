@@ -1,3 +1,4 @@
+import uuid
 import sqlite3
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
@@ -5,12 +6,17 @@ from qdrant_client.models import VectorParams, Distance, PointStruct
 DB_PATH = "products.db"
 COLLECTION_NAME = "fashion_items"
 
-# === SQLite ===
+# ✅ Connect to Docker Qdrant (or Qdrant Cloud if needed)
+client = QdrantClient(url="http://localhost:6333")  # Change this for cloud if needed
+
+
+# === SQLite local product store ===
+
 def insert_products(products):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Force schema reset to prevent column mismatch
+    # Drop and recreate table for clean run — adjust in prod
     c.execute("DROP TABLE IF EXISTS products")
     c.execute('''
         CREATE TABLE products (
@@ -30,26 +36,39 @@ def insert_products(products):
     conn.commit()
     conn.close()
 
-# === Qdrant ===
-client = QdrantClient(path="qdrant_data")
+
+# === Qdrant vector store ===
 
 def setup_qdrant():
     if not client.collection_exists(COLLECTION_NAME):
+        print(f"🛠️ Creating Qdrant collection: {COLLECTION_NAME}")
         client.recreate_collection(
             collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=512, distance=Distance.DOT)
+            vectors_config=VectorParams(size=512, distance=Distance.DOT)  # or COSINE
         )
+    else:
+        print(f"✅ Qdrant collection already exists: {COLLECTION_NAME}")
+
 
 def insert_vector(id, vector, payload):
+    print(f"📥 Inserting vector for: {payload.get('title')} (id: {id})")
     client.upsert(
         collection_name=COLLECTION_NAME,
-        points=[PointStruct(id=id, vector=vector, payload=payload)]
+        points=[
+            PointStruct(
+                id=id,
+                vector=vector,
+                payload=payload
+            )
+        ]
     )
 
-# === Unified wrapper ===
+
+# === Unified insert wrapper ===
+
 def insert_product_to_qdrant(product, vector):
     insert_vector(
-        id=product["image_url"],  # Use image URL as unique ID in vector DB
+        id=str(uuid.uuid4()),         # ✅ Use valid UUID for Qdrant Docker
         vector=vector,
-        payload=product
+        payload=product               # Payload contains image_url, title, etc.
     )

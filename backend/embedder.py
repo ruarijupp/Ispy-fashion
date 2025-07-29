@@ -50,3 +50,15 @@ def embed_image_from_file(path):
     except Exception as e:
         print(f"❌ Failed to embed image from file: {e}")
         return None
+
+def embed_text(text):
+    try:
+        print(f"🧠 Embedding text: {text}")
+        with torch.no_grad():
+            text_tokens = clip.tokenize([text])
+            text_features = model.encode_text(text_tokens)
+        print("✅ Embed successful (text)")
+        return text_features.squeeze(0).cpu().numpy()
+    except Exception as e:
+        print(f"❌ Failed to embed text: {e}")
+        return None

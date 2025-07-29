@@ -1,9 +1,6 @@
-# app/scrape_affiliatelist.py
-
 from playwright.sync_api import sync_playwright
-from app.db import setup_qdrant, insert_vector, insert_products
+from app.db import setup_qdrant, insert_products, insert_product_to_qdrant
 from app.embedder import embed_image_from_url
-import uuid
 import sqlite3
 
 MAX_PAGES = 12
@@ -30,7 +27,7 @@ def scrape_nanushka(page):
                 continue
             if image_url.startswith("//"):
                 image_url = "https:" + image_url
-            if image_url in seen:
+            if image_url in seen or image_url.startswith("data:"):
                 continue
             seen.add(image_url)
 
@@ -45,26 +42,21 @@ def scrape_nanushka(page):
             print(f"🔗 Found image: {image_url}")
             print(f"➡️ Product URL: {product_url or 'None'}")
 
-            try:
-                vector = embed_image_from_url(image_url)
-                if vector is None:
-                    print("⚠️ Skipping product, embedding failed.")
-                    continue
+            vector = embed_image_from_url(image_url)
+            if vector is None:
+                print("⚠️ Skipping product, embedding failed.")
+                continue
 
-                product_id = str(uuid.uuid4())
-                product = {
-                    "id": product_id,
-                    "brand": "Nanushka",
-                    "title": image_url.split("/")[-1].split("?")[0],
-                    "url": product_url or image_url,
-                    "image_url": image_url
-                }
+            product = {
+                "id": image_url,  # Use image URL as stable vector ID
+                "brand": "Nanushka",
+                "title": image_url.split("/")[-1].split("?")[0],
+                "url": product_url or image_url,
+                "image_url": image_url
+            }
 
-                insert_vector(product_id, vector, product)
-                products.append(product)
-
-            except Exception as e:
-                print(f"❌ Error scraping product: {e}")
+            insert_product_to_qdrant(product, vector)
+            products.append(product)
 
     return products
 
@@ -101,8 +93,8 @@ def main(reset_qdrant=False):
         print("=== Scraping Nanushka ===")
         products = scrape_nanushka(page)
 
-        insert_products(products)                     # ✅ products.db
-        save_products_to_db(products, "nanushka")     # ✅ nanushka.db
+        insert_products(products)                     # to products.db
+        save_products_to_db(products, "nanushka")     # to nanushka.db
 
         print(f"\n✅ Scraped {len(products)} unique items from Nanushka")
         browser.close()
