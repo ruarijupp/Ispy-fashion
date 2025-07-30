@@ -5,15 +5,20 @@ from embedder import embed_image_from_file, embed_text
 from qdrant_client import QdrantClient
 import tempfile
 
-COLLECTION_NAME = "fashion_items"
-client = QdrantClient(url="http://localhost:6333")  # Local Qdrant instance
+from qdrant_client import QdrantClient
+import os
+
+client = QdrantClient(
+    url="https://a4138a07-f277-4fe7-aaeb-074af7ae938b.eu-west-2-0.aws.cloud.qdrant.io:6333",
+    api_key=os.getenv("QDRANT_API_KEY")  # Secure way to pass key
+)
 
 app = FastAPI()
 
 # CORS for frontend dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["https://glittering-gecko-87cbe9.netlify.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
