@@ -14,7 +14,7 @@ export default function VisualSearch() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('https://ispy-fashion.onrender.com', {
+      const res = await fetch('https://ispy-fashion.onrender.com/search-html', {
         method: 'POST',
         body: formData,
       });
