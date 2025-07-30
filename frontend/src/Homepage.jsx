@@ -12,7 +12,7 @@ export default function SearchPage() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:8000/search-html', {
+      const res = await fetch('https://ispy-fashion.onrender.com', {
         method: 'POST',
         body: formData,
       });
