@@ -16,10 +16,10 @@ client = QdrantClient(
 # FastAPI app setup
 app = FastAPI()
 
-# CORS middleware to allow Netlify frontend
+# CORS middleware (open for all origins — incl. Netlify)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://glittering-gecko-87cbe9.netlify.app"],
+    allow_origins=["*"],  # ✅ Allow all — needed for Netlify
     allow_methods=["*"],
     allow_headers=["*"],
 )
