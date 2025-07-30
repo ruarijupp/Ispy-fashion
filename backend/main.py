@@ -4,18 +4,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from embedder import embed_image_from_file, embed_text
 from qdrant_client import QdrantClient
 import tempfile
-
-from qdrant_client import QdrantClient
 import os
 
+# Qdrant Cloud connection
+COLLECTION_NAME = "fashion_items"
 client = QdrantClient(
     url="https://a4138a07-f277-4fe7-aaeb-074af7ae938b.eu-west-2-0.aws.cloud.qdrant.io:6333",
-    api_key=os.getenv("QDRANT_API_KEY")  # Secure way to pass key
+    api_key=os.getenv("QDRANT_API_KEY")
 )
 
+# FastAPI app setup
 app = FastAPI()
 
-# CORS for frontend dev
+# CORS middleware to allow Netlify frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://glittering-gecko-87cbe9.netlify.app"],
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Search endpoint (JSON response)
 @app.post("/search")
 async def search(query: str = Form(None), file: UploadFile = File(None)):
     if file:
@@ -55,6 +57,7 @@ async def search(query: str = Form(None), file: UploadFile = File(None)):
         ]
     }
 
+# Search endpoint (HTML preview response)
 @app.post("/search-html", response_class=HTMLResponse)
 async def search_html(file: UploadFile = File(...)):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
