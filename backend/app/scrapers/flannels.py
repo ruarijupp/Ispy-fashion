@@ -1,11 +1,12 @@
+# backend/app/scrapers/flannels.py
+
 from playwright.sync_api import sync_playwright
-from app.db import setup_qdrant, insert_vector, insert_products
-from app.embedder import embed_image_from_url
-import uuid
+from app.db import setup_qdrant, insert_products, insert_product_to_qdrant
+from embedder import embed_image_from_url
 import time
 import random
 
-MAX_PAGES = 200  # There are about 200 pages total
+MAX_PAGES = 200  # Adjust as needed
 
 def scrape_flannels(page, max_pages=MAX_PAGES):
     products = []
@@ -67,39 +68,49 @@ def scrape_flannels(page, max_pages=MAX_PAGES):
                 print("⚠️ Skipping product, embedding failed.")
                 continue
 
-            product_id = str(uuid.uuid4())
             product = {
-                "id": product_id,
+                "id": image_url,  # Use image URL as stable ID
                 "brand": "Flannels",
                 "title": title.strip(),
                 "url": product_url,
                 "image_url": image_url
             }
 
-            insert_vector(product_id, vector, product)
+            insert_product_to_qdrant(product, vector)
             products.append(product)
 
             time.sleep(random.uniform(0.5, 1.2))
 
-        # Pause before next simulated page
+        # Pause before next page
         time.sleep(random.uniform(2.0, 3.5))
 
     return products
 
-
 def main(reset_qdrant=False):
     if reset_qdrant:
         setup_qdrant()
-    # rest unchanged
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-http2"
+            ]
+        )
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/115.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 800},
-            locale="en-US"
+            locale="en-US",
         )
         page = context.new_page()
+
+        # Stealth evasion
+        page.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+        )
 
         print("=== Scraping Flannels ===")
         products = scrape_flannels(page)
@@ -107,7 +118,6 @@ def main(reset_qdrant=False):
 
         print(f"\n✅ Scraped {len(products)} unique items from Flannels")
         browser.close()
-
 
 if __name__ == "__main__":
     main()

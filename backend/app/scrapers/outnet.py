@@ -1,5 +1,5 @@
 from playwright.sync_api import sync_playwright
-from app.embedder import embed_image_from_url
+from backend.embedder import embed_image_from_url
 import sqlite3
 import uuid
 import time

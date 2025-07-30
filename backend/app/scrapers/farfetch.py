@@ -1,12 +1,13 @@
-from playwright.sync_api import sync_playwright
-from app.embedder import embed_image_from_url
-import sqlite3
-import uuid
-import time
-import random
+# backend/app/scrapers/farfetch.py
 
-MAX_PAGES = 100  # Increase to 2162 for full scrape
-FAST_MODE = True  # Toggle to speed things up by skipping embedding and delays
+from playwright.sync_api import sync_playwright
+from app.db import setup_qdrant, insert_products, insert_product_to_qdrant
+from embedder import embed_image_from_url
+from app.scrapers.nanushka import save_products_to_db
+import sqlite3
+import time
+
+MAX_PAGES = 50  # Increase as needed
 
 def scrape_farfetch(page):
     products = []
@@ -23,7 +24,7 @@ def scrape_farfetch(page):
         try:
             page.goto(url, timeout=60000)
             page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(1000 if FAST_MODE else 3000)
+            page.wait_for_timeout(3000)
         except Exception as e:
             print(f"❌ Failed to load page {page_num}: {e}")
             continue
@@ -46,9 +47,7 @@ def scrape_farfetch(page):
                     continue
                 if image_url.startswith("//"):
                     image_url = "https:" + image_url
-                if image_url.startswith("data:"):
-                    continue
-                if image_url in seen:
+                if image_url.startswith("data:") or image_url in seen:
                     continue
                 seen.add(image_url)
 
@@ -58,84 +57,44 @@ def scrape_farfetch(page):
                 print(f"🔗 Found image: {image_url}")
                 print(f"➡️ Product URL: {full_url}")
 
-                vector = None
-                if not FAST_MODE:
-                    print(f"🧠 Embedding: {image_url}")
-                    for attempt in range(1, 3):
-                        vector = embed_image_from_url(image_url)
-                        if vector is not None:
-                            print("✅ Embed successful")
-                            break
-                        print(f"❌ Embed error on attempt {attempt}/2")
-                        time.sleep(0.25)
+                vector = embed_image_from_url(image_url)
+                if vector is None:
+                    print("⚠️ Skipping product, embedding failed.")
+                    continue
 
-                    if vector is None:
-                        print("⚠️ Skipping product, embedding failed.")
-                        continue
-
-                product_id = str(uuid.uuid4())
                 product = {
-                    "id": product_id,
+                    "id": image_url,  # Use image URL as stable unique ID
                     "brand": "Farfetch",
                     "title": title.strip(),
                     "url": full_url,
                     "image_url": image_url
                 }
 
+                insert_product_to_qdrant(product, vector)
                 products.append(product)
-
-                if not FAST_MODE:
-                    time.sleep(random.uniform(0.5, 1.5))
-                else:
-                    time.sleep(0.1)
 
             except Exception as e:
                 print(f"❌ Error scraping product: {e}")
                 continue
 
-        time.sleep(1 if FAST_MODE else random.uniform(1.5, 3.0))
+        # Pause to avoid rate limits
+        time.sleep(2)
 
     return products
 
-def save_to_db(products, db_name):
-    conn = sqlite3.connect(f"{db_name}.db")
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS products (
-            id TEXT PRIMARY KEY,
-            brand TEXT,
-            title TEXT,
-            url TEXT,
-            image_url TEXT
-        )
-    """)
-    for p in products:
-        try:
-            c.execute("INSERT OR IGNORE INTO products VALUES (?, ?, ?, ?, ?)", (
-                p["id"], p["brand"], p["title"], p["url"], p["image_url"]
-            ))
-        except Exception as e:
-            print(f"❌ DB insert error: {e}")
-    conn.commit()
-    conn.close()
+def main(reset_qdrant=False):
+    if reset_qdrant:
+        setup_qdrant()
 
-def main():
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
-        )
-        context = browser.new_context()
-        page = context.new_page()
-
-        # Stealth patch
-        page.add_init_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
-        )
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
         print("=== Scraping Farfetch ===")
         products = scrape_farfetch(page)
-        save_to_db(products, "farfetch")
+
+        insert_products(products)
+        save_products_to_db(products, "farfetch")
 
         print(f"\n✅ Scraped {len(products)} unique items from Farfetch")
         browser.close()

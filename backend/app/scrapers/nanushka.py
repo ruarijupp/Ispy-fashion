@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 from app.db import setup_qdrant, insert_products, insert_product_to_qdrant
-from app.embedder import embed_image_from_url
+from embedder import embed_image_from_url
 import sqlite3
 
 MAX_PAGES = 12

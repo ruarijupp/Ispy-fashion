@@ -2,7 +2,7 @@
 
 from playwright.sync_api import sync_playwright, Error as PlaywrightError
 from app.db import setup_qdrant, insert_vector, insert_products
-from app.embedder import embed_image_from_url
+from backend.embedder import embed_image_from_url
 import uuid
 import time
 import random

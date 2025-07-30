@@ -3,7 +3,7 @@ import sqlite3
 from qdrant_client import QdrantClient
 from qdrant_client.models import CountRequest
 from backend.app.db import insert_vector
-from backend.app.embedder import embed_image_from_url
+from backend.embedder import embed_image_from_url
 
 DATA_FOLDER = "data"
 DB_FILES = [f for f in os.listdir(DATA_FOLDER) if f.endswith(".db")]

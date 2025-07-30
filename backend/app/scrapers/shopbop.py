@@ -3,7 +3,7 @@
 from playwright.sync_api import sync_playwright
 from app.utils.stealth import apply_stealth
 from app.db import insert_products, insert_vector, setup_qdrant
-from app.embedder import embed_image_from_url
+from backend.embedder import embed_image_from_url
 import uuid
 import time
 import random

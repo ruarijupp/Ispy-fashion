@@ -1,6 +1,6 @@
 import csv
 import uuid
-from app.embedder import embed_image_from_url
+from backend.embedder import embed_image_from_url
 from app.db import insert_vector
 
 # 🔧 Adjust paths if needed

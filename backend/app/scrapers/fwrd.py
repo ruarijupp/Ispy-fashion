@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
-from app.db import setup_qdrant, insert_vector, insert_products
-from app.embedder import embed_image_from_url
+from app.db import insert_vector, insert_products
+from embedder import embed_image_from_url
 import uuid
 import time
 import random
@@ -67,7 +67,7 @@ def scrape_fwrd(page):
                     print("⚠️ Skipping product, embedding failed.")
                     continue
 
-                product_id = str(uuid.uuid4())
+                product_id = image_url  # Use image URL as stable vector ID (match nanushka style)
                 product = {
                     "id": product_id,
                     "brand": "FWRD",
@@ -88,9 +88,7 @@ def scrape_fwrd(page):
 
 
 def main():
-    setup_qdrant()
-    print("🧹 Qdrant collection reset.")
-
+    # No reset here to avoid wiping existing vectors
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
